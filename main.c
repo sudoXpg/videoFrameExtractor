@@ -126,7 +126,7 @@ int main(int argc, char* argv[]){
                 // convert the image from native fmt to rgb
                 sws_scale(sws_ctx,(uint8_t const * const *)v_frame->data,v_frame->linesize,0,v_codec_ctx->height,v_frame_jpeg->data,v_frame_jpeg->linesize);
                 
-                if(++i<max_frames){
+                if(++i<=max_frames){
                     save_frame(v_frame_jpeg,v_codec_ctx->width,v_codec_ctx->height,i);
                     // log info
                     printf("Frame index: %d, average frame rate: %.2f, resolution[%dx%d]\n",i,frame_rate,v_codec_ctx->width,v_codec_ctx->height);
