@@ -6,6 +6,20 @@
 #include <libavutil/log.h>          // logging
 #include "save_frame.c"
 
+/*
+TODO
+add the timeframe option
+help option
+custom output directory
+verbose mode
+less mode with process indication
+gif creation
+custom resolution option
+get file info as well(verbose only?)
+
+*/
+
+
 void help_menu();
 
 
