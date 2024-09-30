@@ -19,17 +19,23 @@ get file info as well(verbose only?)
 
 */
 
-
+void options(const char *s);
 void help_menu();
+void help_option();
 
 
 int main(int argc, char* argv[]){
     
-    if(argc!=3){
+    av_log_set_level(AV_LOG_QUIET); // Only show errors
+    
+    if(argc<3){
         help_menu();
         return -1;
     }
-    av_log_set_level(AV_LOG_QUIET); // Only show errors
+
+    if(argc>3) options(argv[3]);
+    
+    
 
     AVFormatContext *v_format_ctx;      // AV file context contains file's codec info
 
@@ -174,7 +180,46 @@ int main(int argc, char* argv[]){
 }
 
 void help_menu(){
-    printf("Enter the filename along with the num of frames to be saved, 'all' to save all frames\n");
+    printf("Enter the filename along with the num of frames to be saved, enter 'all' to save all frames\n");
 }
 
 
+void help_option(){
+    printf("\033[2J"); // Clear the screen
+    printf("\033[H");  // Move cursor to top left
+    printf(">>    VFE v1 ~ Video Frame Extractor\n");
+    printf("---------------------------------------------------------\n");
+    printf("Usage:\n");
+    printf("  vfe <input_file> <num_frames|all> [options]\n");
+    printf("\n");
+    printf("Arguments:\n");
+    printf("  <input_file>        Path to the input video file.\n");
+    printf("  <num_frames|all>    Specify the number of frames to extract or use 'all' to extract all frames.\n");
+    printf("\n");
+    printf("Options:\n");
+    printf("  --timeframe <start> <end>  Extract frames between the specified start and end time (in seconds).\n");
+    printf("  --output <dir>              Specify the output directory for the extracted frames.\n");
+    printf("  --verbose                    Enable verbose output for detailed information during the extraction process.\n");
+    printf("  --gif                        Convert extracted frames to an animated GIF (requires additional implementation).\n");
+    printf("  --h                          Show this help message.\n");
+    printf("\n");
+    printf("Example Usage:\n");
+    printf("  vfe input.mp4 all                           # Extract all frames from a video file.\n");
+    printf("  vfe input.mp4 10                            # Extract the first 10 frames from a video file.\n");
+    printf("  vfe input.mp4 all --timeframe 10 20        # Extract frames from 10 to 20 seconds of the video.\n");
+    printf("  vfe input.mp4 all --output ./extracted_frames # Specify an output directory for the extracted frames.\n");
+    printf("---------------------------------------------------------\n");
+    printf("This program utilizes FFmpeg libraries for efficient video processing.\n");
+}
+
+void options(const char *s){
+    if(strcmp(s,"--verbose")==0){
+        av_log_set_level(AV_LOG_TRACE);
+    }
+    
+
+    if(strcmp(s,"--h")==0){
+        help_option();
+        return ;
+    }
+}
