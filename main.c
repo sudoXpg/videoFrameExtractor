@@ -21,6 +21,8 @@ TODO
   X  get file info as well(verbose only?)
   X  time taken
 
+  ** change the arguement parsing to getopt!!
+
 */
 clock_t start_time,end_time;
 char locn[512];
