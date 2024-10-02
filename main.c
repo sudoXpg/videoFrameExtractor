@@ -1,45 +1,64 @@
 #include <stdio.h>                  // standard lib
+#include <sys/stat.h>               // for mkdir
+#include <sys/types.h>              // for mkdir
 #include <libavcodec/avcodec.h>     // av codecs
 #include <libavutil/imgutils.h>     // image codecs
 #include <libavformat/avformat.h>   // av formats
 #include <libswscale/swscale.h>     // sw scaling
 #include <libavutil/log.h>          // logging
+#include<time.h>                    // time
 #include "save_frame.c"
 
 /*
 TODO
-add the timeframe option
-help option
-custom output directory
-verbose mode
-less mode with process indication
-gif creation
-custom resolution option
-get file info as well(verbose only?)
+  _  add the timeframe option
+  X  help option
+  X  custom output directory
+  X  verbose mode
+  X  less mode with process indication
+  _  gif creation
+  _  custom resolution option
+  X  get file info as well(verbose only?)
+  X  time taken
 
 */
+clock_t start_time,end_time;
+char locn[512];
+int verbose=0;
 
-void options(const char *s);
+void options(char *s, char *s1, char*s2);
 void help_menu();
 void help_option();
-
+void custom_directory(char *s);
 
 int main(int argc, char* argv[]){
-    
     av_log_set_level(AV_LOG_QUIET); // Only show errors
     
+    if (argc > 5) {
+        options(argv[3], argv[4], argv[5]);
+    } else if (argc > 4) {
+        options(argv[3], argv[4], "NULL");
+    } else if (argc > 3) {
+        options(argv[3], "NULL", "NULL");
+    }
+
+
+    if(argc>1 && strcmp(argv[1],"--h")==0){
+        help_option();
+    }
+
     if(argc<3){
         help_menu();
         return -1;
     }
+    
+    //printf("%d\n\n,size = %ld\n\n",(locn[0]=='\0'),sizeof(locn));
+    
 
-    if(argc>3) options(argv[3]);
-    
-    
 
     AVFormatContext *v_format_ctx;      // AV file context contains file's codec info
-
-    if(avformat_open_input(&v_format_ctx,argv[1],NULL,NULL)!=0){           // dumps the header info to the ctx
+    
+    if(avformat_open_input(&v_format_ctx,argv[1],NULL,NULL)<0){           // dumps the header info to the ctx
         fprintf(stderr,"couldn't open file\n");
         return -1;
     }
@@ -121,7 +140,9 @@ int main(int argc, char* argv[]){
     }
 
     double frame_rate=(double)av_q2d(v_format_ctx->streams[video_stream]->avg_frame_rate);
-    int total_frames = frame_rate*av_q2d(v_format_ctx->streams[video_stream]->time_base)*v_format_ctx->duration;
+    //printf("frame rate :%f\n",frame_rate);
+    int total_frames = frame_rate * (double) v_format_ctx->duration/ AV_TIME_BASE;
+    //printf("total frames : %d\n",total_frames);
     int max_frames;
     // if(memcmp(argv[1],"all")==0){
     //     max_frames=total_frames;
@@ -131,8 +152,9 @@ int main(int argc, char* argv[]){
     // }
 
     strcmp(argv[2],"all")==0? max_frames= total_frames:sscanf(argv[2],"%d",&max_frames);;
-
+    float percent_completed;
     int i=0;
+    start_time=clock();
     while(av_read_frame(v_format_ctx,v_packet)>=0){                                                  // returns next frame of scene
         if(v_packet->stream_index==video_stream){                                                    // check if from vid stream
             if(avcodec_send_packet(v_codec_ctx,v_packet)<0){                                         // supply raw packet data as input to a decoder
@@ -147,24 +169,35 @@ int main(int argc, char* argv[]){
                 sws_scale(sws_ctx,(uint8_t const * const *)v_frame->data,v_frame->linesize,0,v_codec_ctx->height,v_frame_jpeg->data,v_frame_jpeg->linesize);
                 
                 if(++i<=max_frames){
-                    save_frame(v_frame_jpeg,v_codec_ctx->width,v_codec_ctx->height,i);
+                    percent_completed=(float)i/(float)max_frames;
+                    percent_completed*=100;
+                    save_frame(locn,v_frame_jpeg,v_codec_ctx->width,v_codec_ctx->height,i);
                     // log info
-                    printf("Frame index: %d, average frame rate: %.2f, resolution[%dx%d]\n",i,frame_rate,v_codec_ctx->width,v_codec_ctx->height);
+                    if(verbose){
+                        printf("Frame index: %d, average frame rate: %.2f, resolution[%dx%d]\n",i,frame_rate,v_codec_ctx->width,v_codec_ctx->height);
+                    }
+                    else{
+                        printf("\033[2K\r");
+                        printf("%.2f %% done",percent_completed);
+                        fflush(stdout);
+                    }
                 }
                 else{
-                    return 0;
+                    //return 0;
                     break;
                 }
             }
         }
         av_packet_unref(v_packet);
         
-        
 
 
     }
+    end_time = clock();
     // cleanup
-        
+    printf("\r\n");
+    printf("Completed in %fsec\n",(double)(end_time-start_time)/CLOCKS_PER_SEC);
+    fflush(stdout);
     av_free(buffer);
     av_frame_free(&v_frame_jpeg);
     av_free(v_frame_jpeg);
@@ -176,7 +209,7 @@ int main(int argc, char* argv[]){
     avcodec_close(v_codec_ctx);
     avformat_close_input(&v_format_ctx);
 
-        return 0;
+    return 0;
 }
 
 void help_menu(){
@@ -184,7 +217,7 @@ void help_menu(){
 }
 
 
-void help_option(){
+void help_option() {
     printf("\033[2J"); // Clear the screen
     printf("\033[H");  // Move cursor to top left
     printf(">>    VFE v1 ~ Video Frame Extractor\n");
@@ -198,7 +231,7 @@ void help_option(){
     printf("\n");
     printf("Options:\n");
     printf("  --timeframe <start> <end>  Extract frames between the specified start and end time (in seconds).\n");
-    printf("  --output <dir>              Specify the output directory for the extracted frames.\n");
+    printf("  --dir <dir>                 Specify a directory to save the extracted frames. Will create the directory if it doesn't exist.\n");
     printf("  --verbose                    Enable verbose output for detailed information during the extraction process.\n");
     printf("  --gif                        Convert extracted frames to an animated GIF (requires additional implementation).\n");
     printf("  --h                          Show this help message.\n");
@@ -207,19 +240,39 @@ void help_option(){
     printf("  vfe input.mp4 all                           # Extract all frames from a video file.\n");
     printf("  vfe input.mp4 10                            # Extract the first 10 frames from a video file.\n");
     printf("  vfe input.mp4 all --timeframe 10 20        # Extract frames from 10 to 20 seconds of the video.\n");
-    printf("  vfe input.mp4 all --output ./extracted_frames # Specify an output directory for the extracted frames.\n");
+    printf("  vfe input.mp4 all --dir ./frames            # Specify a directory to save the extracted frames.\n");
     printf("---------------------------------------------------------\n");
     printf("This program utilizes FFmpeg libraries for efficient video processing.\n");
 }
 
-void options(const char *s){
-    if(strcmp(s,"--verbose")==0){
+
+void options(char *s, char *s1,char *s2){
+    if(strcmp(s,"--verbose")==0 || strcmp(s1,"--verbose")==0 || strcmp(s2,"--verbose")==0){
+        printf("after comp\n");
         av_log_set_level(AV_LOG_TRACE);
+        verbose=1;
     }
     
+    if(strcmp(s,"--dir")==0){
+        if(s1==NULL){
+            printf("Enter a directory name \n");
+            exit(0);
+        }
+        custom_directory(s1);
+    }
 
-    if(strcmp(s,"--h")==0){
-        help_option();
-        return ;
+    
+}
+
+void custom_directory(char *s){
+    strcat(locn,s);
+    struct stat statbuf;
+    if (stat(locn, &statbuf) == 0) {
+        printf("Folder already exists\n");
+        return; 
+    }
+    if(mkdir(locn,0777)!=0){
+        fprintf(stderr,"Unable to create directory\n");
+        return;
     }
 }

@@ -4,7 +4,7 @@
 #include <libavformat/avformat.h>   // av formats
 #include <libswscale/swscale.h>     // sw scaling
 
-void save_frame(AVFrame * fr, int width, int height, int index){
+void save_frame(char *path, AVFrame * fr, int width, int height, int index){
 
 
     AVCodec *jpeg_codec=avcodec_find_encoder(AV_CODEC_ID_MJPEG);
@@ -100,7 +100,13 @@ void save_frame(AVFrame * fr, int width, int height, int index){
     FILE *fp;
     char file_name[30];
     int i;
-    snprintf(file_name,sizeof(file_name),"frame%d.jpeg",index);
+    if(path[0]=='\0'){
+        snprintf(file_name,sizeof(file_name),"frame%d.jpeg", index);
+
+    }
+    else{
+        snprintf(file_name,sizeof(file_name),"%s/frame%d.jpeg", path, index);
+    }
     fp=fopen(file_name,"wb");
     if(fp==NULL){
         fprintf(stderr,"unable to create file\n");
