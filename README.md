@@ -1,118 +1,143 @@
-# Video Frame Extractor (VFE)
 
-## Description
+# VFE - Video Frame Extractor
 
-Video Frame Extractor (VFE) is a command-line tool that allows users to extract frames from video files in various formats. Built using the FFmpeg libraries, VFE enables you to specify the number of frames to extract, extract frames from specific time intervals, and choose the output directory for the extracted frames. 
+**Version**: 1.0  
+**Author**: [sudoXpg]  
+**License**: [??]
 
-## Features
+## Overview
 
-- Extract frames from video files.
-- Specify the number of frames to extract or extract all frames.
-- Option to specify a timeframe for extraction.
-- Choose the output directory for saved frames.
-- Displays detailed information about the video, including codec and resolution.
-- Verbal and visual feedback during extraction with progress information.
+`VFE` (Video Frame Extractor) is a command-line tool built using the FFmpeg library that allows users to extract frames from a video file. It supports custom frame extraction based on the number of frames or a specific time range. The tool also includes options for specifying output directories, enabling verbose mode, and more.
 
-## Dependencies
+### Features
+- Extract all frames or a specified number of frames from any video file.
+- Specify a custom time frame to extract frames between specific start and end times.
+- Custom output directory creation to store extracted frames.
+- Verbose mode for detailed log output.
+- Process indication with less detailed output for casual usage.
+- Time tracking to display the total time taken for extraction.
 
-To compile and run VFE, you will need the following libraries installed on your Linux machine:
+## Requirements
 
-- [FFmpeg](https://ffmpeg.org/)
-  - `libavcodec`
-  - `libavformat`
-  - `libavutil`
-  - `libswscale`
+To compile and run `VFE`, the following dependencies are required:
 
-You can install FFmpeg on Ubuntu with the following command:
-
-```bash
-sudo apt update
-sudo apt install ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
-```
+- FFmpeg libraries (libavcodec, libavformat, libswscale, libavutil)
+- GCC (for compilation)
+- Linux-based system (tested on Ubuntu)
 
 ## Installation
 
-### Cloning the Repository
+1. **Install FFmpeg Libraries**:  
+   On Ubuntu, run the following commands:
+   ```bash
+   sudo apt update
+   sudo apt install libavcodec-dev libavformat-dev libswscale-dev libavutil-dev
+   ```
 
-Clone the repository to your local machine:
+2. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/[YourUsername]/vfe.git
+   cd vfe
+   ```
 
-```bash
-git clone https://github.com/yourusername/videoframeextractor.git
-cd videoframeextractor
-```
+3. **Compile the Program**:
+   Use the following command to compile:
+   ```bash
+   gcc main.c -lavcodec -lavformat -lswscale -lavutil -o vfe
+   ```
 
-### Building the Project
-
-Compile the C code to create the executable:
-
-```bash
-gcc -o vfe main.c save_frame.c -lavformat -lavcodec -lavutil -lswscale
-```
-
-### Making Executable Accessible Globally
-
-To make the `vfe` executable accessible from anywhere, you can move it to a directory in your PATH, such as `/usr/local/bin`:
-
-```bash
-sudo mv vfe /usr/local/bin/
-```
-
-Now, you can run the program using the command `vfe`.
+4. **Make it Globally Accessible**:
+   To use `VFE` from anywhere on your system:
+   ```bash
+   sudo mv vfe /usr/local/bin/
+   ```
 
 ## Usage
 
-The basic syntax for using the Video Frame Extractor is:
+To use `VFE`, run the following command:
 
 ```bash
-vfe <input_file> <num_frames|all> [options]
+vfe <input_file> <max_frames|all> [options]
 ```
 
-### Arguments
+### Arguments:
 
-- `<input_file>`: The path to the input video file.
-- `<num_frames|all>`: Specify the number of frames to extract or use `all` to extract all frames.
+- **`<input_file>`**: Path to the input video file.
+- **`<num_frames|all>`**: Specify the number of frames to extract or use 'all' to extract all frames.
 
-### Options
+### Options:
 
-- `--timeframe <start> <end>`: Extract frames between the specified start and end time (in seconds).
-- `--output <dir>`: Specify the output directory for the extracted frames.
-- `--verbose`: Enable verbose output for detailed information during the extraction process.
-- `--gif`: Convert extracted frames to an animated GIF (requires additional implementation).
+- `--frames`: Extract frames between the specified start and end time.
+- `--dir <dir>`: Specify a directory to save the extracted frames. Creates the directory if it doesn't exist.
+- `--verbose`: Enable verbose output for detailed logging.
+- `--h`: Show the help message.
 
-### Example Usage
-
-Extract all frames from a video file:
+### Example Usage:
 
 ```bash
-vfe input.mp4 all
+vfe input.mp4 all                            # Extract all frames from a video file.
+vfe input.mp4 10                             # Extract the first 10 frames from a video file.
+vfe input.mp4 all --frames 10 20             # Extract frames from 10 to 20 seconds of the video.
+vfe input.mp4 all --dir ./frames             # Specify a directory to save the extracted frames.
 ```
 
-Extract the first 10 frames from a video file:
+## Example Output
+
+When running `VFE`, you can expect the following output:
 
 ```bash
-vfe input.mp4 10
+Frame index: 1, average frame rate: 29.97, resolution[1920x1080]
+Frame index: 2, average frame rate: 29.97, resolution[1920x1080]
+...
+Completed in 12.35sec
 ```
 
-Extract frames from 10 to 20 seconds of the video:
+## Help Screen
+
+To view the help screen, run:
 
 ```bash
-vfe input.mp4 all --timeframe 10 20
+vfe --h
 ```
 
-Specify an output directory for the extracted frames:
+This will output:
 
-```bash
-vfe input.mp4 all --output ./extracted_frames
+```
+>>    VFE v1 ~ Video Frame Extractor
+---------------------------------------------------------
+Usage:
+  vfe <input_file> <max_frames|all> [options]
+
+Arguments:
+  <input_file>        Path to the input video file.
+  <num_frames|all>    Specify the number of frames to extract or use 'all' to extract all frames.
+
+Options:
+  --frames                     Extract frames between the specified start and end time.
+  --dir <dir>                  Specify a directory to save the extracted frames.
+  --verbose                    Enable verbose output for detailed information during the extraction process.
+  --h                          Show this help message.
+
+Example Usage:
+  vfe input.mp4 all                           # Extract all frames from a video file.
+  vfe input.mp4 10                            # Extract the first 10 frames from a video file.
+  vfe input.mp4 all --frames 10 20            # Extract frames from 10 to 20 seconds of the video.
+  vfe input.mp4 all --dir ./frames            # Specify a directory to save the extracted frames.
+
+---------------------------------------------------------
+This program utilizes FFmpeg libraries for efficient video processing.
 ```
 
-## License
+## Known Issues
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Ensure that the input video file is accessible and in a supported format.
+- The `--frames` option requires both start and end times to be valid.
+- Verbose mode might slow down frame extraction due to extensive logging.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
+Contributions are welcome! Please open an issue or submit a pull request if you have suggestions or fixes.
 
-## Acknowledgements
+## License
 
-- FFmpeg for providing powerful libraries for multimedia processing.
+This project is licensed under the [?? License].
