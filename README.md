@@ -2,7 +2,7 @@
 # VFE - Video Frame Extractor
 
 **Version**: 1.0  
-**Author**: [sudoXpg]  
+**Author**: sudoXpg  
 **License**: [??]
 
 ## Overview
