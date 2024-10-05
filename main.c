@@ -11,7 +11,7 @@
 
 /*
 TODO
-  _  add the timeframe option
+  X  add the timeframe option
   X  help option
   X  custom output directory
   X  verbose mode
@@ -27,11 +27,14 @@ TODO
 clock_t start_time,end_time;
 char locn[512];
 int verbose=0;
+int timeframe[] = {0,0};
+int frames_to_process[] = {0,INT_MAX};
 
 void options(char *s, char *s1, char*s2);
 void help_menu();
 void help_option();
 void custom_directory(char *s);
+void custom_frames();
 
 int main(int argc, char* argv[]){
     av_log_set_level(AV_LOG_QUIET); // Only show errors
@@ -142,6 +145,10 @@ int main(int argc, char* argv[]){
     }
 
     double frame_rate=(double)av_q2d(v_format_ctx->streams[video_stream]->avg_frame_rate);
+    if(timeframe[1]!=0){
+        frames_to_process[0]=timeframe[0]*frame_rate;
+        frames_to_process[1]=timeframe[1]*frame_rate;
+    }
     //printf("frame rate :%f\n",frame_rate);
     int total_frames = frame_rate * (double) v_format_ctx->duration/ AV_TIME_BASE;
     //printf("total frames : %d\n",total_frames);
@@ -156,6 +163,7 @@ int main(int argc, char* argv[]){
     strcmp(argv[2],"all")==0? max_frames= total_frames:sscanf(argv[2],"%d",&max_frames);;
     float percent_completed;
     int i=0;
+    int k=0;
     start_time=clock();
     while(av_read_frame(v_format_ctx,v_packet)>=0){                                                  // returns next frame of scene
         if(v_packet->stream_index==video_stream){                                                    // check if from vid stream
@@ -171,22 +179,38 @@ int main(int argc, char* argv[]){
                 sws_scale(sws_ctx,(uint8_t const * const *)v_frame->data,v_frame->linesize,0,v_codec_ctx->height,v_frame_jpeg->data,v_frame_jpeg->linesize);
                 
                 if(++i<=max_frames){
-                    percent_completed=(float)i/(float)max_frames;
-                    percent_completed*=100;
+                    if(i<frames_to_process[0]){
+                        
+                        if(k==1){
+                            printf(".");
+                        }
+                        if(k==0){
+                            printf("buffering");
+                            k=1;
+                        }
+                        continue;
+                    }
+                    
                     save_frame(locn,v_frame_jpeg,v_codec_ctx->width,v_codec_ctx->height,i);
                     // log info
-                    if(verbose){
-                        printf("Frame index: %d, average frame rate: %.2f, resolution[%dx%d]\n",i,frame_rate,v_codec_ctx->width,v_codec_ctx->height);
-                    }
-                    else{
-                        printf("\033[2K\r");
-                        printf("%.2f %% done",percent_completed);
-                        fflush(stdout);
-                    }
+                    printf("Frame index: %d, average frame rate: %.2f, resolution[%dx%d]\n",i,frame_rate,v_codec_ctx->width,v_codec_ctx->height);
                 }
                 else{
-                    //return 0;
-                    break;
+                    end_time = clock();
+                    // cleanup
+                    printf("\r\n");
+                    printf("Completed in %fsec\n",(double)(end_time-start_time)/CLOCKS_PER_SEC);
+                    fflush(stdout);
+                    exit(0);
+                }
+                
+                if(i>frames_to_process[1]){
+                    end_time = clock();
+                    // cleanup
+                    printf("\r\n");
+                    printf("Completed in %fsec\n",(double)(end_time-start_time)/CLOCKS_PER_SEC);
+                    fflush(stdout);
+                    exit(0);
                 }
             }
         }
@@ -225,7 +249,7 @@ void help_option() {
     printf(">>    VFE v1 ~ Video Frame Extractor\n");
     printf("---------------------------------------------------------\n");
     printf("Usage:\n");
-    printf("  vfe <input_file> <num_frames|all> [options]\n");
+    printf("  vfe <input_file> <max_frames|all> [options]\n");
     printf("\n");
     printf("Arguments:\n");
     printf("  <input_file>        Path to the input video file.\n");
@@ -237,6 +261,7 @@ void help_option() {
     printf("  --verbose                    Enable verbose output for detailed information during the extraction process.\n");
     printf("  --gif                        Convert extracted frames to an animated GIF (requires additional implementation).\n");
     printf("  --h                          Show this help message.\n");
+    printf("  --frames                     Enter the start and end duration of frames to be shown.\n                            ||keep max_frames as all||\n");
     printf("\n");
     printf("Example Usage:\n");
     printf("  vfe input.mp4 all                           # Extract all frames from a video file.\n");
@@ -250,19 +275,21 @@ void help_option() {
 
 void options(char *s, char *s1,char *s2){
     if(strcmp(s,"--verbose")==0 || strcmp(s1,"--verbose")==0 || strcmp(s2,"--verbose")==0){
-        printf("after comp\n");
         av_log_set_level(AV_LOG_TRACE);
         verbose=1;
     }
     
-    if(strcmp(s,"--dir")==0){
-        if(s1==NULL){
-            printf("Enter a directory name \n");
-            exit(0);
-        }
-        custom_directory(s1);
+    if(strcmp(s,"--dir")==0 || strcmp(s1,"--dir")==0 || strcmp(s2,"--dir")==0){
+        char dir_name[1024];
+        printf("Enter a directory name \n");
+        scanf("%s",dir_name);
+        custom_directory(dir_name);
     }
 
+    if(strcmp(s,"--frames")==0 || strcmp(s1,"--frames")==0 || strcmp(s2,"--frames")==0){
+        custom_frames();
+    }
+    return;
     
 }
 
@@ -276,5 +303,22 @@ void custom_directory(char *s){
     if(mkdir(locn,0777)!=0){
         fprintf(stderr,"Unable to create directory\n");
         return;
+    }
+}
+
+void custom_frames(){
+    int hr0, m0, s0, hr1, m1, s1;
+    printf("Enter start duration (HH:MM:SS) : ");
+    scanf("%d:%d:%d", &hr0, &m0, &s0);  
+    timeframe[0] = hr0 * 3600 + m0 * 60 + s0;              
+
+
+    printf("Enter end duration (HH:MM:SS) : ");
+    scanf("%d:%d:%d", &hr1, &m1, &s1);  
+    timeframe[1] = hr1 * 3600 + m1 * 60 + s1;
+    
+    if(timeframe[1]-timeframe[0]<0){
+        fprintf(stderr,"End time must be greater than start time !\n");
+        custom_frames();
     }
 }
