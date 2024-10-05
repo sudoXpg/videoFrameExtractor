@@ -16,8 +16,6 @@ TODO
   X  custom output directory
   X  verbose mode
   X  less mode with process indication
-  _  gif creation
-  _  custom resolution option
   X  get file info as well(verbose only?)
   X  time taken
 
@@ -31,7 +29,6 @@ int timeframe[] = {0,0};
 int frames_to_process[] = {0,INT_MAX};
 
 void options(char *s, char *s1, char*s2);
-void help_menu();
 void help_option();
 void custom_directory(char *s);
 void custom_frames();
@@ -53,7 +50,7 @@ int main(int argc, char* argv[]){
     }
 
     if(argc<3){
-        help_menu();
+        help_option();
         return -1;
     }
     
@@ -238,10 +235,6 @@ int main(int argc, char* argv[]){
     return 0;
 }
 
-void help_menu(){
-    printf("Enter the filename along with the num of frames to be saved, enter 'all' to save all frames\n");
-}
-
 
 void help_option() {
     printf("\033[2J"); // Clear the screen
@@ -256,17 +249,16 @@ void help_option() {
     printf("  <num_frames|all>    Specify the number of frames to extract or use 'all' to extract all frames.\n");
     printf("\n");
     printf("Options:\n");
-    printf("  --timeframe <start> <end>  Extract frames between the specified start and end time (in seconds).\n");
-    printf("  --dir <dir>                 Specify a directory to save the extracted frames. Will create the directory if it doesn't exist.\n");
+    printf("  --frames                     Extract frames between the specified start and end time\n");
+    printf("  --dir <dir>                  Specify a directory to save the extracted frames. Will create the directory if it doesn't exist.\n");
     printf("  --verbose                    Enable verbose output for detailed information during the extraction process.\n");
-    printf("  --gif                        Convert extracted frames to an animated GIF (requires additional implementation).\n");
     printf("  --h                          Show this help message.\n");
-    printf("  --frames                     Enter the start and end duration of frames to be shown.\n                            ||keep max_frames as all||\n");
+    printf("  --frames                     Enter the start and end duration of frames to be shown.\n                               << keep max_frames as all >>\n");
     printf("\n");
     printf("Example Usage:\n");
     printf("  vfe input.mp4 all                           # Extract all frames from a video file.\n");
     printf("  vfe input.mp4 10                            # Extract the first 10 frames from a video file.\n");
-    printf("  vfe input.mp4 all --timeframe 10 20        # Extract frames from 10 to 20 seconds of the video.\n");
+    printf("  vfe input.mp4 all --timeframe 10 20         # Extract frames from 10 to 20 seconds of the video.\n");
     printf("  vfe input.mp4 all --dir ./frames            # Specify a directory to save the extracted frames.\n");
     printf("---------------------------------------------------------\n");
     printf("This program utilizes FFmpeg libraries for efficient video processing.\n");
