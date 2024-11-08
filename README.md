@@ -3,7 +3,7 @@
 
 **Version**: 1.0  
 **Author**: sudoXpg  
-**License**: [??]
+**License**: []
 
 ## Overview
 
@@ -36,7 +36,7 @@ To compile and run `VFE`, the following dependencies are required:
 
 2. **Clone the Repository**:
    ```bash
-   git clone https://github.com/[YourUsername]/vfe.git
+   git clone https://github.com/sudoXpg/videoFrameExtractor
    cd vfe
    ```
 
